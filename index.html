@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Editor</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 
+            "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+    </script>
+    <script src="script.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-logo">
+                <img src="logo.png" alt="PDF Editor">
+            </div>
+            <ul class="nav-links">
+                <li><a href="tools.html">All Tools</a></li>
+                <li><a href="compress.html">Compress PDF</a></li>
+                <li><a href="edit.html">Edit PDF</a></li>
+                <li><a href="fill-sign.html">Fill & Sign</a></li>
+                <li><a href="merge.html">Merge PDF</a></li>
+                <li><a href="delete.html">Delete Pages</a></li>
+                <li><a href="crop.html">Crop</a></li>
+            </ul>
+            <div class="auth-buttons">
+                <a href="login.html" class="login-btn">Login</a>
+            </div>
+        </div>
+    </nav>
+    <div class="page-wrapper">
+        <div class="background-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+    
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">Welcome to PDF Editor</h1>
+            <p class="hero-description">The best PDF Editor for your documents, Online and Free Tool</p>
+        </div>
+    </div>
+        <div class="upload-section" id="upload-section">
+            <div class="upload-icon">
+                <i class="fas fa-file-image"></i>
+            </div>
+            <div class="upload-controls">
+                <input type="file" id="pdf-upload" accept="application/pdf" style="display: none;">
+                <button id="upload-btn">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Choose PDF Files
+                </button>
+                <p class="upload-description">Drop your PDF file here</p>
+            </div>
+        
+        </div>
+        <section class="why-choose-section" id="why-choose-section">
+            <h1>Why Choose Our PDF Editor?</h1>
+            <p class="subtitle">Managing PDFs has never been easier! Our web-based PDF Editor offers a seamless experience for editing, modifying, and enhancing PDF documents right from your browser—no downloads required.</p>
+            
+            <div class="features-grid" id="features-section">
+                <div class="feature-item">
+                    <div class="feature-card">
+                        <i class="fas fa-bolt"></i>
+                        <h3> Quick & Easy to Use</h3>
+                        <p>Upload your PDF and start editing instantly. No complex installations or software setup—just a smooth, user-friendly interface.</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-card">
+                        <i class="fas fa-shield-alt"></i>
+                        <h3>100% Online & Secure</h3>
+                        <p>Your documents stay safe with our in-browser processing. No files are stored or shared, ensuring complete privacy.</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-card">
+                        <i class="fas fa-pencil-alt"></i>
+                        <h3>Feature-Rich Editing</h3>
+                        <p>Add text, annotations, highlights, and more—customize your PDFs the way you need with intuitive tools.</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-card">
+                        <i class="fas fa-gift"></i>
+                        <h3>Works on Any Device
+                        </h3>
+                        <p>Whether you're using a desktop, tablet, or mobile device, our PDF editor is fully responsive and accessible anytime, anywhere.</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-card">
+                        <i class="fas fa-user-check"></i>
+                        <h3>Free & Efficient</h3>
+                        <p>Save time and money with our free-to-use tool. Get professional PDF editing without expensive software.</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-card">
+                        <i class="fas fa-desktop"></i>
+                        <h3>No Registration Required</h3>
+                        <p>Start editing your PDFs instantly—no sign-ups, logins, or subscriptions needed. Just upload, edit, and download with ease!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="features-grid" id="features-section" style="display: none;">
+            <div class="feature-item">
+                <div class="feature-card">
+                    <i class="fas fa-font"></i>
+                    <h3>Text</h3>
+                    <p>Edit or add text to your PDF</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-card">
+                    <i class="fas fa-link"></i>
+                    <h3>Links</h3>
+                    <p>Add clickable links to your document</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-card">
+                    <i class="fas fa-signature"></i>
+                    <h3>Sign</h3>
+                    <p>Add signatures to your PDF</p>
+                </div>
+            </div>
+        </div>
+        <div class="pdf-editor-container" id="pdf-container" style="display: none;">
+            <!-- PDF Tools Bar -->
+            <div class="pdf-tools">
+                <div class="tool-group">
+                    <button class="tool-btn" id="add-text-btn" title="Add Text">
+                        <i class="fas fa-font"></i>
+                        <span>Text</span>
+                    </button>
+                    <button class="tool-btn" title="Add Link">
+                        <i class="fas fa-link"></i>
+                        <span>Link</span>
+                    </button>
+                    <button class="tool-btn" title="Add Signature">
+                        <i class="fas fa-signature"></i>
+                        <span>Sign</span>
+                    </button>
+                    <button class="tool-btn" title="Whiteout">
+                        <i class="fas fa-eraser"></i>
+                        <span>Whiteout</span>
+                    </button>
+                    <button class="tool-btn" title="Annotate">
+                        <i class="fas fa-comment-alt"></i>
+                        <span>Annotate</span>
+                    </button>
+                    <button class="tool-btn" title="Add Shapes">
+                        <i class="fas fa-shapes"></i>
+                        <span>Shapes</span>
+                    </button>
+                    <button class="tool-btn" title="Undo">
+                        <i class="fas fa-undo"></i>
+                        <span>Undo</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PDF Canvas Container -->
+            <div class="pdf-canvas-container">
+                <canvas id="pdf-canvas"></canvas>
+            </div>
+
+            <!-- PDF Control Bar -->
+            <div class="pdf-controls">
+                <div class="control-group">
+                    <button class="control-btn" title="Zoom In" id="zoom-in-btn">
+                        <i class="fas fa-search-plus" id="zoom-in-icon"></i>
+                    </button>
+                    <button class="control-btn" title="Zoom Out" id="zoom-out-btn">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button class="control-btn" title="Rotate">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button class="control-btn" title="Insert Page">
+                        <i class="fas fa-file-medical"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+</div>
+<footer class="footer">
+    <div class="footer-content">
+        <!-- Company Info -->
+        <div class="footer-section">
+            <div class="footer-logo">
+                <img src="logo.png" alt="WriteCream AI Logo">
+            </div>
+            <p class="company-description">
+                WriteCream AI provides intelligent document solutions to make your work easier and more efficient.
+            </p>
+            <div class="social-links">
+                <a href="#" title="Facebook"><i class="fab fa-facebook"></i></a>
+                <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                <a href="#" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="footer-section">
+            <h4>Quick Links</h4>
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a href="#">About Us</a></li>
+                <li><a href="#">Features</a></li>
+                <li><a href="#">Pricing</a></li>
+                <li><a href="#">Contact</a></li>
+            </ul>
+        </div>
+
+        <!-- Tools -->
+        <div class="footer-section">
+            <h4>Our Tools</h4>
+            <ul>
+                <li><a href="#">JPG to PDF</a></li>
+                <li><a href="#">PDF Editor</a></li>
+                <li><a href="#">PDF Merger</a></li>
+                <li><a href="#">PDF Compressor</a></li>
+                <li><a href="#">All Tools</a></li>
+            </ul>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="footer-section">
+            <h4>Contact Us</h4>
+            <ul class="contact-info">
+                <li><i class="fas fa-envelope"></i> support@writecream.com</li>
+                <li><i class="fas fa-phone"></i> +1 (555) 123-4567</li>
+                <li><i class="fas fa-map-marker-alt"></i> 123 Business Street, Suite 100<br>New York, NY 10001</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="footer-bottom">
+        <div class="footer-bottom-content">
+            <p>&copy; 2024 WriteCream AI. All rights reserved.</p>
+            <div class="footer-bottom-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Cookie Policy</a>
+            </div>
+        </div>
+    </div>
+</footer>
+</body>
+</html>
