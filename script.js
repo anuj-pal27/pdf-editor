@@ -5,6 +5,22 @@ let rotationAngle = 0; // Default rotation angle
   // Initialize zoom buttons
   let zoomScale = 1.5; // Default zoom scale
 let activeText = null;
+let isTextMode = false;
+let isLinkMode = false;
+
+// Add these to your global variables
+let canvasHistory = [];
+let currentHistoryIndex = -1;
+
+// Add to your global variables
+let isDrawingShape = false;
+let currentShape = null;
+let startPoint = null;
+
+// Add to your global variables
+let isAnnotateMode = false;
+let currentAnnotationColor = '#000000'; // Default text color
+let currentAnnotationBg = '#fff4b8';    // Default background color
 
 // Initialize fabric canvas after DOM is loaded
 document.addEventListener("DOMContentLoaded", function () {
@@ -103,6 +119,147 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById('share-btn').addEventListener('click', sharePDF);
   document.getElementById('print-btn').addEventListener('click', printPDF);
   document.getElementById('email-btn').addEventListener('click', emailPDF);
+
+  const addTextBtn = document.getElementById('add-text-btn');
+  if (addTextBtn) {
+    addTextBtn.addEventListener('click', function() {
+      isTextMode = !isTextMode; // Toggle text mode
+      
+      // Toggle active class on button
+      this.classList.toggle('active');
+      
+      // Update cursor based on mode
+      if (isTextMode) {
+        fabricCanvas.defaultCursor = 'text';
+        fabricCanvas.on('mouse:down', addText);
+      } else {
+        fabricCanvas.defaultCursor = 'default';
+        fabricCanvas.off('mouse:down', addText);
+      }
+    });
+  }
+
+  // Link button functionality
+  const linkBtn = document.querySelector('button[title="Link"]');
+  if (linkBtn) {
+    linkBtn.addEventListener('click', function() {
+      isLinkMode = !isLinkMode;
+      this.classList.toggle('active');
+      
+      if (isLinkMode) {
+        fabricCanvas.defaultCursor = 'crosshair';
+        fabricCanvas.on('mouse:down', startAddLink);
+      } else {
+        fabricCanvas.defaultCursor = 'default';
+        fabricCanvas.off('mouse:down', startAddLink);
+      }
+    });
+  }
+
+  // Link modal buttons
+  document.getElementById('add-link-btn').addEventListener('click', addLink);
+  document.getElementById('cancel-link-btn').addEventListener('click', hideLinkModal);
+  document.getElementById('close-link-modal').addEventListener('click', hideLinkModal);
+
+  // Delete button handler
+  document.getElementById('delete-btn')?.addEventListener('click', deleteSelectedObject);
+
+  // Signature button handler
+  const signBtn = document.querySelector('button[title="Sign"]');
+  if (signBtn) {
+    signBtn.addEventListener('click', showSignatureModal);
+  }
+
+  // Signature modal handlers
+  document.getElementById('draw-sig-btn').addEventListener('click', startDrawSignature);
+  document.getElementById('upload-sig-btn').addEventListener('click', () => document.getElementById('sig-upload').click());
+  document.getElementById('sig-upload').addEventListener('change', handleSignatureUpload);
+  document.getElementById('close-sig-modal').addEventListener('click', hideSignatureModal);
+
+  // Undo button handler
+  const undoBtn = document.querySelector('button[title="Undo"]');
+  if (undoBtn) {
+    undoBtn.addEventListener('click', undo);
+  }
+
+  // Save state after any canvas modification
+  fabricCanvas.on('object:added', saveCanvasState);
+  fabricCanvas.on('object:modified', saveCanvasState);
+  fabricCanvas.on('object:removed', saveCanvasState);
+
+  // Shapes button and dropdown
+  const shapesBtn = document.getElementById('shapes-btn');
+  const shapesDropdown = document.getElementById('shapes-dropdown');
+  
+  shapesBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    shapesDropdown.classList.toggle('show');
+    
+    // Position dropdown below button
+    const btnRect = shapesBtn.getBoundingClientRect();
+    shapesDropdown.style.top = `${btnRect.bottom + 5}px`;
+    shapesDropdown.style.left = `${btnRect.left}px`;
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!shapesDropdown.contains(e.target) && !shapesBtn.contains(e.target)) {
+      shapesDropdown.classList.remove('show');
+    }
+  });
+
+  // Shape buttons click handlers
+  document.querySelectorAll('.shape-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const shape = this.dataset.shape;
+      startDrawingShape(shape);
+      shapesDropdown.classList.remove('show');
+    });
+  });
+
+  // Canvas event handlers for shape drawing
+  fabricCanvas.on('mouse:down', startShape);
+  fabricCanvas.on('mouse:move', drawShape);
+  fabricCanvas.on('mouse:up', finishShape);
+
+  // Annotate button handler
+  const annotateBtn = document.querySelector('button[title="Annotate"]');
+  const colorPickers = document.querySelector('.annotation-colors');
+  
+  if (annotateBtn) {
+    annotateBtn.addEventListener('click', function() {
+      isAnnotateMode = !isAnnotateMode;
+      this.classList.toggle('active');
+      
+      if (isAnnotateMode) {
+        fabricCanvas.defaultCursor = 'crosshair';
+        fabricCanvas.on('mouse:down', addAnnotation);
+      } else {
+        fabricCanvas.defaultCursor = 'default';
+        fabricCanvas.off('mouse:down', addAnnotation);
+      }
+    });
+  }
+
+  // Color picker handlers
+  document.getElementById('annotation-text-color').addEventListener('input', function(e) {
+    currentAnnotationColor = e.target.value;
+  });
+
+  document.getElementById('annotation-bg-color').addEventListener('input', function(e) {
+    currentAnnotationBg = e.target.value;
+  });
+
+  // Close color pickers when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!annotateBtn.contains(e.target) && !colorPickers.contains(e.target)) {
+      colorPickers.style.display = 'none';
+      isAnnotateMode = false;
+      annotateBtn.classList.remove('active');
+      fabricCanvas.defaultCursor = 'default';
+      fabricCanvas.off('mouse:down', addAnnotation);
+    }
+  });
 });
 
 
@@ -206,33 +363,35 @@ function updateCanvasRotation() {
   fabricCanvas.renderAll();
 }
 // Add text function
-function addText() {
-  console.log("Adding text");
-  const text = new fabric.IText("New Text", {
-    left: 100,
-    top: 100,
+function addText(event) {
+  if (!isTextMode) return;
+
+  // Get click position
+  const pointer = fabricCanvas.getPointer(event.e);
+  
+  // Create new text object
+  const text = new fabric.IText('Click to edit', {
+    left: pointer.x,
+    top: pointer.y,
     fontSize: 20,
-    fill: "#000000",
-    fontFamily: "Arial",
-    editable: true,
+    fill: '#000000',
+    fontFamily: 'Arial',
+    editable: true
   });
+  
   fabricCanvas.add(text);
   fabricCanvas.setActiveObject(text);
-  fabricCanvas.renderAll();
-  console.log("Text added");
+  
+  // Exit text mode after adding text
+  isTextMode = false;
+  document.getElementById('add-text-btn').classList.remove('active');
+  fabricCanvas.defaultCursor = 'default';
+  fabricCanvas.off('mouse:down', addText);
+  
+  // Show toolbar for the new text
+  showTextToolbar();
+  updateToolbarState(text);
 }
-
-// Event listener for text button
-document.getElementById("add-text-btn")?.addEventListener("click", addText);
-
-// Enable editing on double click
-fabricCanvas.on("mouse:dblclick", function (event) {
-  const target = fabricCanvas.findTarget(event.e);
-  if (target && target.type === "i-text") {
-    target.enterEditing();
-    fabricCanvas.setActiveObject(target);
-  }
-});
 
 // Handle text selection
 function handleTextSelection(e) {
@@ -558,4 +717,426 @@ function emailPDF() {
     window.location.href = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
     hideSaveModal();
 }
+
+// Link functions
+function startAddLink(event) {
+    if (!isLinkMode) return;
+
+    // Store click position
+    window.linkPosition = fabricCanvas.getPointer(event.e);
+    
+    // Show link modal
+    showLinkModal();
+    
+    // Exit link mode
+    isLinkMode = false;
+    document.querySelector('button[title="Link"]').classList.remove('active');
+    fabricCanvas.defaultCursor = 'default';
+    fabricCanvas.off('mouse:down', startAddLink);
+}
+
+function showLinkModal() {
+    const modal = document.getElementById('link-modal');
+    modal.style.display = 'block';
+    document.getElementById('link-text').focus();
+}
+
+function hideLinkModal() {
+    const modal = document.getElementById('link-modal');
+    modal.style.display = 'none';
+    document.getElementById('link-text').value = '';
+    document.getElementById('link-url').value = '';
+}
+
+function addLink() {
+    const linkText = document.getElementById('link-text').value.trim();
+    const linkUrl = document.getElementById('link-url').value.trim();
+
+    if (!linkText || !linkUrl) {
+        alert('Please enter both link text and URL');
+        return;
+    }
+
+    // Create link text object
+    const linkObject = new fabric.IText(linkText, {
+        left: window.linkPosition.x,
+        top: window.linkPosition.y,
+        fontSize: 16,
+        fill: '#0066cc',
+        fontFamily: 'Arial',
+        underline: true,
+        selectable: true,
+        customData: {
+            type: 'link',
+            url: linkUrl
+        }
+    });
+
+    // Add click handler with a flag to distinguish between drag and click
+    let isDragging = false;
+    let mouseDownTime = 0;
+
+    linkObject.on('mousedown', function() {
+        isDragging = false;
+        mouseDownTime = Date.now();
+    });
+
+    linkObject.on('moving', function() {
+        isDragging = true;
+    });
+
+    linkObject.on('mouseup', function() {
+        const mouseUpTime = Date.now();
+        const timeDiff = mouseUpTime - mouseDownTime;
+        
+        // If it's a quick click (less than 200ms) and not dragging, open the link
+        if (!isDragging && timeDiff < 200 && !fabricCanvas.isDrawingMode) {
+            window.open(this.customData.url, '_blank');
+        }
+    });
+
+    // Add hover effect
+    linkObject.on('mouseover', function() {
+        this.set('cursor', fabricCanvas.getActiveObject() === this ? 'move' : 'pointer');
+        fabricCanvas.renderAll();
+    });
+
+    fabricCanvas.add(linkObject);
+    fabricCanvas.renderAll();
+    hideLinkModal();
+}
+
+// Add this to handle link clicks when saving/downloading
+function handleLinks() {
+    const objects = fabricCanvas.getObjects();
+    objects.forEach(obj => {
+        if (obj.customData && obj.customData.type === 'link') {
+            // Handle link clicks in the final PDF
+            // You might need to implement this based on your PDF library
+        }
+    });
+}
+
+// Add delete function
+function deleteSelectedObject() {
+    const activeObject = fabricCanvas.getActiveObject();
+    if (activeObject) {
+        fabricCanvas.remove(activeObject);
+        fabricCanvas.renderAll();
+        hideTextToolbar(); // Hide toolbar after deletion
+    }
+}
+
+// Update your keyboard event listener to also handle delete key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+        // Only delete if we're not editing text
+        const activeObject = fabricCanvas.getActiveObject();
+        if (activeObject && !(activeObject.isEditing)) {
+            deleteSelectedObject();
+        }
+    }
+});
+
+function showSignatureModal() {
+    document.getElementById('signature-modal').style.display = 'block';
+}
+
+function hideSignatureModal() {
+    document.getElementById('signature-modal').style.display = 'none';
+}
+
+function startDrawSignature() {
+    hideSignatureModal();
+    fabricCanvas.isDrawingMode = true;
+    fabricCanvas.freeDrawingBrush.width = 2;
+    fabricCanvas.freeDrawingBrush.color = '#000000';
+    
+    // Change cursor
+    fabricCanvas.defaultCursor = 'crosshair';
+    
+    // Add one-time click handler to exit drawing mode
+    fabricCanvas.once('mouse:up', function() {
+        fabricCanvas.isDrawingMode = false;
+        fabricCanvas.defaultCursor = 'default';
+    });
+}
+
+function handleSignatureUpload(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            fabric.Image.fromURL(event.target.result, function(img) {
+                // Scale image if too large
+                if (img.width > 200) {
+                    const scale = 200 / img.width;
+                    img.scale(scale);
+                }
+                
+                // Center the image
+                img.set({
+                    left: fabricCanvas.width / 2 - (img.width * img.scaleX) / 2,
+                    top: fabricCanvas.height / 2 - (img.height * img.scaleY) / 2
+                });
+                
+                fabricCanvas.add(img);
+                fabricCanvas.setActiveObject(img);
+                fabricCanvas.renderAll();
+            });
+        };
+        reader.readAsDataURL(file);
+        hideSignatureModal();
+        e.target.value = ''; // Reset file input
+    }
+}
+
+// Add this function to save canvas state
+function saveCanvasState() {
+    // Remove any states after current index if we're in middle of history
+    if (currentHistoryIndex < canvasHistory.length - 1) {
+        canvasHistory = canvasHistory.slice(0, currentHistoryIndex + 1);
+    }
+    
+    // Save current state
+    const state = JSON.stringify(fabricCanvas);
+    canvasHistory.push(state);
+    currentHistoryIndex++;
+    
+    // Limit history size to prevent memory issues
+    if (canvasHistory.length > 20) {
+        canvasHistory.shift();
+        currentHistoryIndex--;
+    }
+    
+    // Enable/disable undo button
+    updateUndoButton();
+}
+
+// Add this function to update undo button state
+function updateUndoButton() {
+    const undoBtn = document.querySelector('button[title="Undo"]');
+    if (undoBtn) {
+        undoBtn.disabled = currentHistoryIndex <= 0;
+        undoBtn.style.opacity = currentHistoryIndex <= 0 ? '0.5' : '1';
+    }
+}
+
+// Modified undo function to handle one state at a time
+function undo() {
+    if (currentHistoryIndex > 0) {
+        // Get the previous state
+        currentHistoryIndex--;
+        const previousState = JSON.parse(canvasHistory[currentHistoryIndex]);
+        
+        // Clear current canvas
+        fabricCanvas.clear();
+        
+        // Load objects from previous state
+        previousState.objects.forEach(obj => {
+            fabric.util.enlivenObjects([obj], function(enlivenedObjects) {
+                const enlivenedObject = enlivenedObjects[0];
+                fabricCanvas.add(enlivenedObject);
+                fabricCanvas.renderAll();
+            });
+        });
+        
+        updateUndoButton();
+    }
+}
+
+// Add keyboard shortcut for undo (Ctrl/Cmd + Z)
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        undo();
+    }
+});
+
+function startDrawingShape(shape) {
+    isDrawingShape = true;
+    currentShape = shape;
+    fabricCanvas.defaultCursor = 'crosshair';
+}
+
+function startShape(o) {
+    if (!isDrawingShape) return;
+
+    const pointer = fabricCanvas.getPointer(o.e);
+    startPoint = { x: pointer.x, y: pointer.y };
+
+    switch (currentShape) {
+        case 'rectangle':
+            currentShape = new fabric.Rect({
+                left: startPoint.x,
+                top: startPoint.y,
+                width: 0,
+                height: 0,
+                fill: 'transparent',
+                stroke: '#000',
+                strokeWidth: 2
+            });
+            break;
+
+        case 'circle':
+            currentShape = new fabric.Circle({
+                left: startPoint.x,
+                top: startPoint.y,
+                radius: 0,
+                fill: 'transparent',
+                stroke: '#000',
+                strokeWidth: 2
+            });
+            break;
+
+        case 'line':
+            currentShape = new fabric.Line([startPoint.x, startPoint.y, startPoint.x, startPoint.y], {
+                stroke: '#000',
+                strokeWidth: 2
+            });
+            break;
+
+        case 'triangle':
+            currentShape = new fabric.Triangle({
+                left: startPoint.x,
+                top: startPoint.y,
+                width: 0,
+                height: 0,
+                fill: 'transparent',
+                stroke: '#000',
+                strokeWidth: 2
+            });
+            break;
+
+        case 'ellipse':
+            currentShape = new fabric.Ellipse({
+                left: startPoint.x,
+                top: startPoint.y,
+                rx: 0,
+                ry: 0,
+                fill: 'transparent',
+                stroke: '#000',
+                strokeWidth: 2
+            });
+            break;
+    }
+
+    if (currentShape) {
+        fabricCanvas.add(currentShape);
+        fabricCanvas.renderAll();
+    }
+}
+
+function drawShape(o) {
+    if (!isDrawingShape || !startPoint || !currentShape) return;
+
+    const pointer = fabricCanvas.getPointer(o.e);
+    const width = pointer.x - startPoint.x;
+    const height = pointer.y - startPoint.y;
+
+    switch (currentShape.type) {
+        case 'rect':
+            currentShape.set({
+                width: Math.abs(width),
+                height: Math.abs(height),
+                left: width > 0 ? startPoint.x : pointer.x,
+                top: height > 0 ? startPoint.y : pointer.y
+            });
+            break;
+
+        case 'circle':
+            const radius = Math.sqrt(width * width + height * height) / 2;
+            currentShape.set({
+                radius: radius,
+                left: startPoint.x - radius,
+                top: startPoint.y - radius
+            });
+            break;
+
+        case 'line':
+            currentShape.set({
+                x2: pointer.x,
+                y2: pointer.y
+            });
+            break;
+
+        case 'triangle':
+            currentShape.set({
+                width: Math.abs(width),
+                height: Math.abs(height),
+                left: width > 0 ? startPoint.x : pointer.x,
+                top: height > 0 ? startPoint.y : pointer.y
+            });
+            break;
+
+        case 'ellipse':
+            currentShape.set({
+                rx: Math.abs(width) / 2,
+                ry: Math.abs(height) / 2,
+                left: width > 0 ? startPoint.x : pointer.x,
+                top: height > 0 ? startPoint.y : pointer.y
+            });
+            break;
+    }
+
+    fabricCanvas.renderAll();
+}
+
+function finishShape() {
+    if (!isDrawingShape) return;
+
+    isDrawingShape = false;
+    currentShape = null;
+    startPoint = null;
+    fabricCanvas.defaultCursor = 'default';
+    fabricCanvas.renderAll();
+}
+
+// Simplified annotation function
+function addAnnotation(event) {
+    if (!isAnnotateMode) return;
+
+    const pointer = fabricCanvas.getPointer(event.e);
+    
+    // Create annotation with better default colors
+    const annotation = new fabric.IText('Add annotation...', {
+        left: pointer.x,
+        top: pointer.y,
+        fontSize: 16,
+        fontFamily: 'Arial',
+        fill: '#000000',          // Black text
+        backgroundColor: '#ffeb3b', // Yellow background
+        padding: 10,
+        selectable: true,
+        editable: true,
+        hasBorders: true,
+        hasControls: true,
+        strokeWidth: 1,
+        stroke: '#ffd600'         // Darker yellow border
+    });
+
+    // Add to canvas
+    fabricCanvas.add(annotation);
+    fabricCanvas.setActiveObject(annotation);
+    
+    // Exit annotate mode
+    isAnnotateMode = false;
+    document.querySelector('button[title="Annotate"]').classList.remove('active');
+    fabricCanvas.defaultCursor = 'default';
+    fabricCanvas.off('mouse:down', addAnnotation);
+    
+    // Save state for undo
+    saveCanvasState();
+    fabricCanvas.renderAll();
+}
+
+// Add this CSS for annotation styling
+const style = document.createElement('style');
+style.textContent = `
+    .tool-btn[title="Annotate"].active {
+        color: #f86635;
+        background-color: #fff3f0;
+    }
+`;
+document.head.appendChild(style);
 

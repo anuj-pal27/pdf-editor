@@ -163,6 +163,8 @@
                         <i class="fas fa-signature"></i>
                         <span>Sign</span>
                     </button>
+      
+                    
                 </div>
                 <div class="tool-item">
                     <button class="tool-btn" title="Whiteout">
@@ -177,10 +179,32 @@
                     </button>
                 </div>
                 <div class="tool-item">
-                    <button class="tool-btn" title="Shapes">
+                    <button class="tool-btn" title="Shapes" id="shapes-btn">
                         <i class="fas fa-shapes"></i>
                         <span>Shapes</span>
                     </button>
+                    <div class="shapes-dropdown" id="shapes-dropdown">
+                        <button class="shape-btn" data-shape="rectangle">
+                            <i class="far fa-square"></i>
+                            Rectangle
+                        </button>
+                        <button class="shape-btn" data-shape="circle">
+                            <i class="far fa-circle"></i>
+                            Circle
+                        </button>
+                        <button class="shape-btn" data-shape="line">
+                            <i class="fas fa-minus"></i>
+                            Line
+                        </button>
+                        <button class="shape-btn" data-shape="triangle">
+                            <i class="fas fa-play"></i>
+                            Triangle
+                        </button>
+                        <button class="shape-btn" data-shape="ellipse">
+                            <i class="fas fa-egg"></i>
+                            Ellipse
+                        </button>
+                    </div>
                 </div>
                 <div class="tool-item">
                     <button class="tool-btn" title="Undo">
@@ -212,6 +236,9 @@
                     <option value="32">32</option>
                 </select>
                 <input type="color" id="text-color" title="Text Color">
+                <button class="tool-btn" id="delete-btn" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
         
             <!-- Canvas -->
@@ -328,5 +355,38 @@
         </div>
     </div>
 </footer>
+<!-- Add this after your existing modals -->
+<div class="modal" id="link-modal">
+    <div class="modal-content">
+        <h3>Add Link</h3>
+        <div class="link-form">
+            <input type="text" id="link-text" placeholder="Link Text" class="link-input">
+            <input type="url" id="link-url" placeholder="https://example.com" class="link-input">
+            <div class="link-buttons">
+                <button class="modal-btn primary" id="add-link-btn">Add Link</button>
+                <button class="modal-btn" id="cancel-link-btn">Cancel</button>
+            </div>
+        </div>
+        <button class="close-btn" id="close-link-modal">×</button>
+    </div>
+</div>
+<!-- Add this modal for signatures -->
+<div class="modal" id="signature-modal">
+    <div class="modal-content">
+        <h3>Add Signature</h3>
+        <div class="signature-options">
+            <button class="modal-btn" id="draw-sig-btn">
+                <i class="fas fa-pen"></i>
+                Draw Signature
+            </button>
+            <input type="file" id="sig-upload" accept="image/*" style="display: none;">
+            <button class="modal-btn" id="upload-sig-btn">
+                <i class="fas fa-upload"></i>
+                Upload Signature
+            </button>
+        </div>
+        <button class="close-btn" id="close-sig-modal">×</button>
+    </div>
+</div>
 </body>
 </html>
