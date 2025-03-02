@@ -12,6 +12,9 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 
             "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="script.js"></script>
 </head>
 <body>
@@ -140,34 +143,46 @@
                 </div>
             </div>
         </div>
-        <div class="pdf-editor-container" id="pdf-container" style="display: none;">
-            <!-- PDF Tools Bar -->
-            <div class="pdf-tools">
-                <div class="tool-group">
-                    <button class="tool-btn" id="add-text-btn" title="Add Text">
+        <div id="pdf-container" style="display: none;">
+            <!-- Tool Group -->
+            <div class="tool-group">
+                <div class="tool-item">
+                    <button class="tool-btn" id="add-text-btn" title="Text">
                         <i class="fas fa-font"></i>
                         <span>Text</span>
                     </button>
-                    <button class="tool-btn" title="Add Link">
+                </div>
+                <div class="tool-item">
+                    <button class="tool-btn" title="Link">
                         <i class="fas fa-link"></i>
                         <span>Link</span>
                     </button>
-                    <button class="tool-btn" title="Add Signature">
+                </div>
+                <div class="tool-item">
+                    <button class="tool-btn" title="Sign">
                         <i class="fas fa-signature"></i>
                         <span>Sign</span>
                     </button>
+                </div>
+                <div class="tool-item">
                     <button class="tool-btn" title="Whiteout">
                         <i class="fas fa-eraser"></i>
                         <span>Whiteout</span>
                     </button>
+                </div>
+                <div class="tool-item">
                     <button class="tool-btn" title="Annotate">
                         <i class="fas fa-comment-alt"></i>
                         <span>Annotate</span>
                     </button>
-                    <button class="tool-btn" title="Add Shapes">
+                </div>
+                <div class="tool-item">
+                    <button class="tool-btn" title="Shapes">
                         <i class="fas fa-shapes"></i>
                         <span>Shapes</span>
                     </button>
+                </div>
+                <div class="tool-item">
                     <button class="tool-btn" title="Undo">
                         <i class="fas fa-undo"></i>
                         <span>Undo</span>
@@ -175,26 +190,75 @@
                 </div>
             </div>
 
-            <!-- PDF Canvas Container -->
-            <div class="pdf-canvas-container">
-                <canvas id="pdf-canvas"></canvas>
+            <!-- Text Formatting Toolbar -->
+            <div class="text-toolbar" id="text-toolbar" style="display: none;">
+                <button class="tool-btn" id="bold-btn" title="Bold">
+                    <i class="fas fa-bold"></i>
+                </button>
+                <button class="tool-btn" id="italic-btn" title="Italic">
+                    <i class="fas fa-italic"></i>
+                </button>
+                <button class="tool-btn" id="underline-btn" title="Underline">
+                    <i class="fas fa-underline"></i>
+                </button>
+                <select id="font-size" title="Font Size">
+                    <option value="12">12</option>
+                    <option value="14">14</option>
+                    <option value="16">16</option>
+                    <option value="18">18</option>
+                    <option value="20">20</option>
+                    <option value="24">24</option>
+                    <option value="28">28</option>
+                    <option value="32">32</option>
+                </select>
+                <input type="color" id="text-color" title="Text Color">
+            </div>
+        
+            <!-- Canvas -->
+            <canvas id="pdf-canvas"></canvas>
+
+            <!-- Add this after the canvas and before the action buttons -->
+            <div class="zoom-controls">
+                <button class="zoom-btn" id="zoom-in-btn" title="Zoom Out">
+                    <i class="fas fa-search-plus"></i>
+
+                </button>
+                <span id="zoom-level"></span>
+                <button class="zoom-btn" id="zoom-out-btn" title="Zoom In">
+                    <i class="fas fa-search-minus"></i>
+                </button>
             </div>
 
-            <!-- PDF Control Bar -->
-            <div class="pdf-controls">
-                <div class="control-group">
-                    <button class="control-btn" title="Zoom In" id="zoom-in-btn">
-                        <i class="fas fa-search-plus" id="zoom-in-icon"></i>
-                    </button>
-                    <button class="control-btn" title="Zoom Out" id="zoom-out-btn">
-                        <i class="fas fa-search-minus"></i>
-                    </button>
-                    <button class="control-btn" title="Rotate">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <button class="control-btn" title="Insert Page">
-                        <i class="fas fa-file-medical"></i>
-                    </button>
+            <!-- Add this after the canvas -->
+            <div class="action-buttons">
+                <button class="action-btn primary" id="save-btn">
+                    <i class="fas fa-save"></i>
+                    Apply Changes
+                </button>
+                
+                <div class="modal" id="save-modal">
+                    <div class="modal-content">
+                        <h3>Save or Share Your PDF</h3>
+                        <div class="modal-buttons">
+                            <button class="modal-btn" id="download-btn">
+                                <i class="fas fa-download"></i>
+                                Download PDF
+                            </button>
+                            <button class="modal-btn" id="share-btn">
+                                <i class="fas fa-share-alt"></i>
+                                Share
+                            </button>
+                            <button class="modal-btn" id="print-btn">
+                                <i class="fas fa-print"></i>
+                                Print
+                            </button>
+                            <button class="modal-btn" id="email-btn">
+                                <i class="fas fa-envelope"></i>
+                                Send via Email
+                            </button>
+                        </div>
+                        <button class="close-btn" id="close-modal">×</button>
+                    </div>
                 </div>
             </div>
         </div>
