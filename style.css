@@ -375,6 +375,7 @@ body{
 }
 
 .tool-item {
+    position: relative;
     text-align: center;
 }
 
@@ -1141,10 +1142,13 @@ margin: 3rem 0;
     position: absolute;
     background: white;
     border: 1px solid #ddd;
-    border-radius: 8px;
+    border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    padding: 8px;
+    padding: 5px 0;
     z-index: 1000;
+    min-width: 120px;
+    top: 100%;
+    left: 0;
 }
 
 .shapes-dropdown.show {
@@ -1154,22 +1158,20 @@ margin: 3rem 0;
 .shape-btn {
     display: flex;
     align-items: center;
-    gap: 10px;
     width: 100%;
-    padding: 8px 12px;
+    padding: 8px 15px;
     border: none;
     background: none;
     cursor: pointer;
-    color: #666;
-    transition: all 0.3s;
+    text-align: left;
+    font-size: 14px;
 }
 
 .shape-btn:hover {
-    background: #f5f5f5;
-    color: #f86635;
+    background-color: #f5f5f5;
 }
 
 .shape-btn i {
+    margin-right: 8px;
     width: 20px;
-    text-align: center;
 }

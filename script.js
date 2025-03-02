@@ -188,25 +188,28 @@ document.addEventListener("DOMContentLoaded", function () {
   fabricCanvas.on('object:removed', saveCanvasState);
 
   // Shapes button and dropdown
-  const shapesBtn = document.getElementById('shapes-btn');
-  const shapesDropdown = document.getElementById('shapes-dropdown');
+  const shapesBtn = document.querySelector('button[title="Shapes"]');
+  const shapesDropdown = document.querySelector('.shapes-dropdown');
   
-  shapesBtn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    shapesDropdown.classList.toggle('show');
-    
-    // Position dropdown below button
-    const btnRect = shapesBtn.getBoundingClientRect();
-    shapesDropdown.style.top = `${btnRect.bottom + 5}px`;
-    shapesDropdown.style.left = `${btnRect.left}px`;
-  });
+  if (shapesBtn && shapesDropdown) {
+    shapesBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      shapesDropdown.classList.toggle('show');
+      
+      // Position dropdown relative to button
+      const btnRect = this.getBoundingClientRect();
+      shapesDropdown.style.position = 'absolute';
+      shapesDropdown.style.top = '100%'; // Position below the button
+      shapesDropdown.style.left = '0';   // Align with left edge of button
+    });
 
-  // Close dropdown when clicking outside
-  document.addEventListener('click', function(e) {
-    if (!shapesDropdown.contains(e.target) && !shapesBtn.contains(e.target)) {
-      shapesDropdown.classList.remove('show');
-    }
-  });
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!shapesDropdown.contains(e.target) && !shapesBtn.contains(e.target)) {
+        shapesDropdown.classList.remove('show');
+      }
+    });
+  }
 
   // Shape buttons click handlers
   document.querySelectorAll('.shape-btn').forEach(btn => {
@@ -1139,4 +1142,3 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
-
