@@ -120,29 +120,7 @@
                 </div>
             </div>
         </section>
-        <div class="features-grid" id="features-section" style="display: none;">
-            <div class="feature-item">
-                <div class="feature-card">
-                    <i class="fas fa-font"></i>
-                    <h3>Text</h3>
-                    <p>Edit or add text to your PDF</p>
-                </div>
-            </div>
-            <div class="feature-item">
-                <div class="feature-card">
-                    <i class="fas fa-link"></i>
-                    <h3>Links</h3>
-                    <p>Add clickable links to your document</p>
-                </div>
-            </div>
-            <div class="feature-item">
-                <div class="feature-card">
-                    <i class="fas fa-signature"></i>
-                    <h3>Sign</h3>
-                    <p>Add signatures to your PDF</p>
-                </div>
-            </div>
-        </div>
+       
         <div id="pdf-container" style="display: none;">
             <!-- Tool Group -->
             <div class="tool-group">
@@ -163,8 +141,12 @@
                         <i class="fas fa-signature"></i>
                         <span>Sign</span>
                     </button>
-      
-                    
+                </div>
+                <div class="tool-item">
+                    <button class="tool-btn" title="Image">
+                        <i class="fas fa-image"></i>
+                        <span>Image</span>
+                    </button>
                 </div>
                 <div class="tool-item">
                     <button class="tool-btn" title="Annotate">
@@ -382,5 +364,21 @@
         <button class="close-btn" id="close-sig-modal">×</button>
     </div>
 </div>
+<!-- Add this modal for image upload -->
+<div class="modal" id="image-modal">
+    <div class="modal-content">
+        <h3>Upload Image</h3>
+        <div class="image-upload-container">
+            <input type="file" id="image-upload" accept="image/*" style="display: none;">
+            <button id="upload-img-btn" class="upload-btn">
+                <i class="fas fa-cloud-upload-alt"></i>
+                Choose Image
+            </button>
+            <p class="upload-text">or drag and drop image here</p>
+        </div>
+        <button class="close" id="close-image-modal">&times;</button>
+    </div>
+</div>
+
 </body>
 </html>

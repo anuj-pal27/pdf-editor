@@ -138,7 +138,16 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
-
+  // Image button handler - with console logs for debugging
+  const imageBtn = document.querySelector('button[title="Image"]');
+  console.log('Image button found:', imageBtn); // Debug log
+  
+  if (imageBtn) {
+    console.log('Image button found'); // Debugging log
+    imageBtn.addEventListener('click', showImageModal);
+  } else {
+    console.error('Image button not found'); // Debugging log
+  }
   // Link button functionality
   const linkBtn = document.querySelector('button[title="Link"]');
   if (linkBtn) {
@@ -263,8 +272,87 @@ document.addEventListener("DOMContentLoaded", function () {
       fabricCanvas.off('mouse:down', addAnnotation);
     }
   });
+
 });
 
+// Function to show image modal
+function showImageModal() {
+
+    // Show the modal
+    const imageModal = document.getElementById('image-modal');
+    if (imageModal) {
+        imageModal.style.display = 'block';
+    }
+    setupImageModalListeners();
+}
+
+// Function to setup image modal listeners
+function setupImageModalListeners() {
+    const imageModal = document.getElementById('image-modal');
+    const imageUpload = document.getElementById('image-upload');
+    const uploadBtn = document.getElementById('upload-img-btn')
+    const closeBtn = document.getElementById('close-image-modal');
+    console.log(uploadBtn);
+    // Upload button click
+    uploadBtn.addEventListener('click', () => {
+        console.log('Upload button clicked');
+        imageUpload.click();
+    });
+    
+    // File selection
+    imageUpload.addEventListener('change', handleImageUpload);
+    
+    // Close button
+    closeBtn.addEventListener('click', () => {
+        console.log('Setting up image modal listeners');
+        imageModal.style.display = 'none';
+    });
+    
+    // Click outside to close
+    window.addEventListener('click', (e) => {
+        if (e.target === imageModal) {
+            imageModal.style.display = 'none';
+        }
+    });
+}
+
+// Function to handle image upload
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            fabric.Image.fromURL(e.target.result, function(img) {
+                // Scale image if too large
+                const maxSize = 300;
+                if (img.width > maxSize || img.height > maxSize) {
+                    const scale = maxSize / Math.max(img.width, img.height);
+                    img.scale(scale);
+                }
+
+                // Center image
+                img.set({
+                    left: fabricCanvas.width / 2 - (img.width * img.scaleX) / 2,
+                    top: fabricCanvas.height / 2 - (img.height * img.scaleY) / 2
+                });
+
+                fabricCanvas.add(img);
+                fabricCanvas.setActiveObject(img);
+                
+                fabricCanvas.renderAll();
+                
+                // Save state for undo
+                saveCanvasState();
+                
+                // Close modal
+                document.getElementById('image-modal').style.display = 'none';
+            });
+        };
+        
+        reader.readAsDataURL(file);
+    }
+}
 
 async function loadPDF(data) {
   try {
