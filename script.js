@@ -28,6 +28,8 @@ let totalPages = 1;
 
 // Add this to your global variables at the top
 let isDeleteMode = false;
+let currentCanvasX = 0;
+let currentCanvasY = 0;
 
 // Initialize fabric canvas after DOM is loaded
 document.addEventListener("DOMContentLoaded", function () {
@@ -37,6 +39,8 @@ document.addEventListener("DOMContentLoaded", function () {
     height: 1000,
     backgroundColor: "white",
   });
+
+
 
 
 

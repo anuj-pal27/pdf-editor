@@ -222,9 +222,11 @@
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
-        
-            <!-- Canvas -->
-            <canvas id="pdf-canvas"></canvas>
+       
+            <div class="canvas-container" style="touch-action: pan-y pinch-zoom; overflow: auto;">
+                <canvas id="pdf-canvas"></canvas>
+            </div>
+
 
             <!-- Add this after the canvas and before the action buttons -->
             <div class="zoom-controls">
