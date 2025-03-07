@@ -26,6 +26,9 @@ let currentAnnotationBg = '#fff4b8';    // Default background color
 let currentPage = 1;
 let totalPages = 1;
 
+// Add this to your global variables at the top
+let isDeleteMode = false;
+
 // Initialize fabric canvas after DOM is loaded
 document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM loaded, initializing canvas");
@@ -277,6 +280,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  // Setup delete button
+  setupDeleteButton();
 });
 
 // Function to show image modal
@@ -1308,3 +1313,115 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+function setupDeleteButton() {
+    console.log("Setting up delete button");
+    const deleteBtn = document.getElementById('delete-tool-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', toggleDeleteMode);
+    }
+}
+
+function toggleDeleteMode() {
+    isDeleteMode = !isDeleteMode;
+    console.log("Delete mode:", isDeleteMode ? "enabled" : "disabled");
+    
+    const deleteBtn = document.getElementById('delete-tool-btn');
+    deleteBtn.classList.toggle('active');
+    
+    if (isDeleteMode) {
+        enableDeleteMode();
+    } else {
+        disableDeleteMode();
+    }
+}
+
+function enableDeleteMode() {
+    console.log("Enabling delete mode");
+    
+    // Change cursor
+    fabricCanvas.defaultCursor = 'not-allowed';
+    
+    // Enable selection
+    fabricCanvas.selection = true;
+    
+    // Make all objects selectable
+    fabricCanvas.getObjects().forEach(obj => {
+        obj.selectable = true;
+        obj.evented = true;
+    });
+    
+    // Add delete click handler
+    fabricCanvas.on('mouse:down', handleDeleteClick);
+    
+    // Add hover effects
+    fabricCanvas.on('mouse:over', handleDeleteHover);
+    fabricCanvas.on('mouse:out', handleDeleteOut);
+}
+
+function handleDeleteClick(e) {
+    if (!isDeleteMode || !e.target) return;
+    
+    console.log("Attempting to delete:", e.target);
+    deleteObject(e.target);
+}
+
+function handleDeleteHover(e) {
+    if (!isDeleteMode || !e.target) return;
+    
+    e.target.set({
+        opacity: 0.5
+    });
+    fabricCanvas.renderAll();
+}
+
+function handleDeleteOut(e) {
+    if (!isDeleteMode || !e.target) return;
+    
+    e.target.set({
+        opacity: 1
+    });
+    fabricCanvas.renderAll();
+}
+
+function disableDeleteMode() {
+    console.log("Disabling delete mode");
+    
+    // Reset cursor
+    fabricCanvas.defaultCursor = 'default';
+    
+    // Remove event handlers
+    fabricCanvas.off('mouse:down', handleDeleteClick);
+    fabricCanvas.off('mouse:over', handleDeleteHover);
+    fabricCanvas.off('mouse:out', handleDeleteOut);
+    
+    // Reset object properties
+    fabricCanvas.getObjects().forEach(obj => {
+        obj.set({
+            opacity: 1
+        });
+    });
+    
+    fabricCanvas.renderAll();
+}
+
+function deleteObject(object) {
+    try {
+        console.log("Deleting object");
+        fabricCanvas.remove(object);
+        fabricCanvas.discardActiveObject();
+        fabricCanvas.renderAll();
+        saveCanvasState();
+        console.log("Object deleted successfully");
+    } catch (error) {
+        console.error("Error deleting object:", error);
+    }
+}
+
+// Make sure to initialize the delete button in your DOMContentLoaded event
+document.addEventListener("DOMContentLoaded", function() {
+    // ... other initialization code ...
+    
+    // Initialize delete functionality
+    setupDeleteButton();
+});

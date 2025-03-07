@@ -412,6 +412,25 @@ body{
     color: #f86635;
 }
 
+.tool-btn[title="Delete"] {
+    color: #dc3545;
+}
+
+.tool-btn[title="Delete"].active {
+    background-color: #dc3545;
+    color: white;
+}
+
+.tool-btn[title="Delete"]:hover {
+    background-color: #ffebee;
+    color: #dc3545;
+}
+
+.tool-btn[title="Delete"].active:hover {
+    background-color: #c82333;
+    color: white;
+}
+
 /* PDF Canvas Container */
 .pdf-canvas-container {
     background: #f5f5f5;
