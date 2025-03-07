@@ -22,6 +22,10 @@ let isAnnotateMode = false;
 let currentAnnotationColor = '#000000'; // Default text color
 let currentAnnotationBg = '#fff4b8';    // Default background color
 
+// Add these to your global variables at the top
+let currentPage = 1;
+let totalPages = 1;
+
 // Initialize fabric canvas after DOM is loaded
 document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM loaded, initializing canvas");
@@ -354,19 +358,84 @@ function handleImageUpload(event) {
     }
 }
 
-async function loadPDF(data) {
-  try {
-    console.log("Loading PDF...");
-    pdfDoc = await pdfjsLib.getDocument({ data: data }).promise;
-    console.log("PDF loaded, pages:", pdfDoc.numPages);
-    await renderPage(pageNum);
-  } catch (error) {
-    console.error("Error in loadPDF:", error);
-  }
+async function loadPDF(pdfData) {
+    try {
+        // Load the PDF document
+        pdfDoc = await pdfjsLib.getDocument({ data: pdfData }).promise;
+        console.log("PDF loaded successfully");
+
+        // Get total pages
+        totalPages = pdfDoc.numPages;
+        currentPage = 1;
+        pageNum = 1;
+
+        // Initialize fabric canvas if not already done
+        if (!fabricCanvas) {
+            const success = initializeFabricCanvas();
+            if (!success) {
+                throw new Error("Failed to initialize canvas");
+            }
+        }
+
+        // Initialize page navigation
+        initializePageNavigation(pdfDoc.numPages);
+
+        // Render the first page
+        await renderPage(currentPage, zoomScale);
+
+        console.log("PDF initialized successfully");
+    } catch (error) {
+        console.error("Error in loadPDF:", error);
+        throw error;
+    }
 }
 
+// Add these new functions for page navigation
+function initializePageNavigation(numPages) {
+    const prevButton = document.getElementById('prev-page');
+    const nextButton = document.getElementById('next-page');
+    const pageNumSpan = document.getElementById('page-num');
+    const pageCountSpan = document.getElementById('page-count');
 
-async function renderPage(num,zoomScale = 1.5) {
+    // Set total pages
+    totalPages = numPages;
+    pageCountSpan.textContent = numPages;
+
+    // Update current page
+    pageNumSpan.textContent = pageNum;
+
+    // Previous page button
+    prevButton.addEventListener('click', () => {
+        if (pageNum <= 1) return;
+        pageNum--;
+        renderPage(pageNum, zoomScale);
+    });
+
+    // Next page button
+    nextButton.addEventListener('click', () => {
+        if (pageNum >= totalPages) return;
+        pageNum++;
+        renderPage(pageNum, zoomScale);
+    });
+
+    // Initial update
+    updatePageNavigation();
+}
+
+function updatePageNavigation() {
+    const prevButton = document.getElementById('prev-page');
+    const nextButton = document.getElementById('next-page');
+    const pageNumSpan = document.getElementById('page-num');
+
+    // Update page number display
+    pageNumSpan.textContent = pageNum;
+
+    // Enable/disable buttons based on current page
+    prevButton.disabled = pageNum <= 1;
+    nextButton.disabled = pageNum >= totalPages;
+}
+
+async function renderPage(num, zoomScale = 1.5) {
   try {
     console.log("Rendering page", num, "at zoom", zoomScale);
     const page = await pdfDoc.getPage(num);
@@ -429,8 +498,17 @@ async function renderPage(num,zoomScale = 1.5) {
     });
 
     fabricCanvas.renderAll();
+
+    // Update navigation after rendering
+    updatePageNavigation();
+    
+    // Update current page
+    currentPage = num;
+    pageNum = num;
+
   } catch (error) {
     console.error("Error in renderPage:", error);
+    throw error;
   }
 }
 //rotate canvas
