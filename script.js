@@ -443,83 +443,153 @@ function updatePageNavigation() {
     prevButton.disabled = pageNum <= 1;
     nextButton.disabled = pageNum >= totalPages;
 }
-
 async function renderPage(num, zoomScale = 1.5) {
-  try {
-    console.log("Rendering page", num, "at zoom", zoomScale);
-    const page = await pdfDoc.getPage(num);
-    const viewport = page.getViewport({ scale: zoomScale, rotation: rotationAngle });
-
-    // Set canvas size
-    fabricCanvas.setWidth(viewport.width);
-    fabricCanvas.setHeight(viewport.height);
-
-    // Clear existing content
-    fabricCanvas.clear();
-
-    // Get text content
-    const textContent = await page.getTextContent();
-
-    // Create text objects directly
-    textContent.items.forEach((item) => {
-      const transform = pdfjsLib.Util.transform(
-        viewport.transform,
-        item.transform
-      );
-      const fontSize = Math.sqrt(
-        transform[0] * transform[0] + transform[1] * transform[1]
-      );
-
-      let left = transform[4];
-      let top = transform[5] - fontSize;
-       // Adjust text positioning based on rotation
-       let adjustedLeft = left;
-       let adjustedTop = top;
-      // Adjust text positioning based on rotation
-      switch (rotationAngle) {
-        case 90:
-            adjustedLeft = top;
-            adjustedTop = viewport.width - left;
+    try {
+      console.log("Rendering page", num, "at zoom", zoomScale);
+      const page = await pdfDoc.getPage(num);
+      const viewport = page.getViewport({ scale: zoomScale, rotation: rotationAngle });
+  
+      await page.getOperatorList(); // Ensures all objects are processed
+  
+      // Set canvas size
+      fabricCanvas.setWidth(viewport.width);
+      fabricCanvas.setHeight(viewport.height);
+  
+      // Clear existing content
+      fabricCanvas.clear();
+  
+      // Get text content
+      const textContent = await page.getTextContent();
+  
+      textContent.items.forEach((item) => {
+        const transform = pdfjsLib.Util.transform(viewport.transform, item.transform);
+        const fontSize = Math.sqrt(transform[0] ** 2 + transform[1] ** 2);
+  
+        let left = transform[4];
+        let top = transform[5] - fontSize;
+  
+        // Adjust positioning based on rotation
+        switch (rotationAngle) {
+          case 90:
+            [left, top] = [top, viewport.width - left];
             break;
-        case 180:
-            adjustedLeft = viewport.width - left;
-            adjustedTop = viewport.height - top;
+          case 180:
+            [left, top] = [viewport.width - left, viewport.height - top];
             break;
-        case 270:
-            adjustedLeft = viewport.height - top;
-            adjustedTop = left;
+          case 270:
+            [left, top] = [viewport.height - top, left];
             break;
-    }
-      const text = new fabric.IText(item.str, {
-        left: transform[4],
-        top: transform[5] - fontSize,
-        fontSize: fontSize,
-        fill: item.color || "#000000",
-        fontFamily: item.fontFamily || "Arial",
-        editable: true,
-        selectable: true,
-        hasControls: true,
-        originX: "left",
-        originY: "top",
+        }
+  
+        const text = new fabric.IText(item.str, {
+          left,
+          top,
+          fontSize,
+          fill: item.color || "#000000",
+          fontFamily: item.fontFamily || "Arial",
+          editable: true,
+          selectable: true,
+          hasControls: true,
+          originX: "left",
+          originY: "top",
+        });
+  
+        fabricCanvas.add(text);
       });
-
-      fabricCanvas.add(text);
-    });
-
-    fabricCanvas.renderAll();
-
-    // Update navigation after rendering
-    updatePageNavigation();
-    
-    // Update current page
-    currentPage = num;
-    pageNum = num;
-
-  } catch (error) {
-    console.error("Error in renderPage:", error);
-    throw error;
+  
+      // 🔹 Extract and render images
+      const opList = await page.getOperatorList();
+      const xObjects = page.resources?.get("XObject") || {}; // Ensure `resources` exist
+  
+      if (!xObjects) {
+        console.warn("No image objects found in the PDF.");
+        return;
+      }
+  
+      console.log(xObjects);
+  
+      for (let i = 0; i < opList.fnArray.length; i++) {
+        if (opList.fnArray[i] === pdfjsLib.OPS.paintImageXObject) {
+          const imageKey = opList.argsArray[i][0];
+  
+          try {
+            console.log(`Processing image: ${imageKey}`);
+  
+            // Ensure `commonObjs` exists
+            if (!page.commonObjs) {
+              console.warn("page.commonObjs is undefined, skipping image processing.");
+              continue;
+            }
+  
+            // 🔹 Ensure the image object is loaded
+            await page.commonObjs.ensureObj(imageKey);
+            const img = page.commonObjs.get(imageKey);
+  
+            if (!img) {
+              console.warn(`Image ${imageKey} is not available.`);
+              continue;
+            }
+  
+            console.log("Extracted Image:", img);
+  
+            const imageCanvas = document.createElement("canvas");
+            imageCanvas.width = img.width;
+            imageCanvas.height = img.height;
+            const imgCtx = imageCanvas.getContext("2d");
+  
+            imgCtx.putImageData(
+              new ImageData(new Uint8ClampedArray(img.data), img.width, img.height),
+              0,
+              0
+            );
+  
+            let left = img.transform[4] || 0;
+            let top = img.transform[5] || 0;
+  
+            // Adjust positioning based on rotation
+            switch (rotationAngle) {
+              case 90:
+                [left, top] = [top, viewport.width - left];
+                break;
+              case 180:
+                [left, top] = [viewport.width - left, viewport.height - top];
+                break;
+              case 270:
+                [left, top] = [viewport.height - top, left];
+                break;
+            }
+  
+            const fabricImg = new fabric.Image(imageCanvas, {
+              left,
+              top,
+              scaleX: img.width / imageCanvas.width,
+              scaleY: img.height / imageCanvas.height,
+              selectable: true,
+              hasControls: true,
+            });
+  
+            fabricCanvas.add(fabricImg);
+          } catch (err) {
+            console.warn(`Image ${imageKey} not loaded yet, skipping...`, err);
+          }
+        }
+      }
+  
+      fabricCanvas.renderAll();
+  
+      // Update navigation after rendering
+      updatePageNavigation();
+  
+      // Update current page
+      currentPage = num;
+      pageNum = num;
+  
+    } catch (error) {
+      console.error("Error in renderPage:", error);
+      throw error;
+    }
   }
-}
+  
 //rotate canvas
 function rotateLeft() {
   rotationAngle = (rotationAngle +90) % 360; // Rotate -90 degrees
